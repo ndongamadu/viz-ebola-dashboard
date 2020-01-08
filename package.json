@@ -1,8 +1,8 @@
 {
-  "name": "viz-starter",
+  "name": "viz-ebola-dashboard",
   "version": "1.0.0",
   "description": "",
-  "homepage": "https://github.com/OCHA-DAP/viz-starter.git",
+  "homepage": "https://github.com/OCHA-DAP/viz-ebola-dashboard",
   "main": " ",
   "scripts": {
     "start": "http-server ./dist -c-1 -p 3000",
@@ -24,7 +24,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
-  "author": "Erika Wei",
+  "author": "Erika Wei & Amadu Ndong",
   "license": "ISC",
   "dependencies": {
     "browserify": "^16.2.3",
