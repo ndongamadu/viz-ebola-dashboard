@@ -1,4 +1,5 @@
 @import '_grid';
+@import '_forms';
 
 * {
 	box-sizing: border-box;
@@ -14,11 +15,21 @@ html, body {
 }
 
 body {
+	background-color: #ecf0f5;
   display: flex;
   flex-direction: column;
 	font-family: 'PT Sans', sans-serif;
+	font-size: 14px;
 	margin: 0;
 	padding: 0;
+}
+
+a {
+	color: #3c8dbc;
+	text-decoration: none;
+	&:hover {
+		opacity: 0.8;
+	}
 }
 
 main {
@@ -26,20 +37,141 @@ main {
 }
 
 footer {
-	background-color: #353535;
+	background-color: #FFF;
 	color: #FFF;
-	padding: 20px 0 10px;
+	display: flex;
+	padding: 5px 30px;
 }
 
-.logos {
-	img {
-		margin-right: 40px;
-		margin-bottom: 0;
-		vertical-align: top;
-		width: auto;
+h1 {
+	font-size: 18px;
+	margin: 0;
+	padding-left: 30px;
+}
+
+h2 {
+}
+
+h3 {
+	font-size: 18px;
+	margin: 0;
+}
+
+h4 {	
+	font-size: 15px;
+	margin: 0;
+}
+
+.header {
+	align-items: center;
+	background-color: #222;
+	color: #FFF;
+	display: flex;
+	padding: 10px 30px 10px 15px;
+}
+
+.sign-in {
+	color: #9d9d9d;
+	padding-right: 10px;
+}
+
+ul {
+	align-items: center;
+	display: flex;
+	margin: 0;
+	padding: 0;
+	&.align-right {
+		margin-left: auto;
+	}
+	li {
+		list-style-type: none;
+		padding: 0 0 0 10px;
 	}
 }
 
+.btn {
+	background-color: #0073b7;
+	border-radius: 2px;
+	color: #FFF;
+	font-size: 12px;
+	padding: 5px 10px;
+	i {
+		margin-right: 5px;
+	}
+	&.align-right {
+		float: right;
+	}
+}
+
+.sidebar {
+	background-color: #222d32;
+	color: #FFF;
+	font-weight: 700;
+	padding: 20px 0;
+	> div {
+		padding: 30px 10px 10px;
+		position: relative;
+	}
+}
+
+.inner {
+  padding: 10px;
+}
+
+.content {
+	margin-right: 30px;
+}
+
+.container {
+	background-color: #FFF;    
+	border-radius: 3px;
+  border-top: 3px solid #d2d6de;
+  margin-bottom: 15px;
+}
+
+.container-footer {
+	border-top: 1px solid #F4F4F4;
+	padding: 10px;
+}
+
+.keyfigures {
+	margin: 15px 0;
+	> div {
+		background-color: #0073b7;
+		border-radius: 2px;
+		box-shadow: 0 1px 1px rgba(0,0,0,.1);
+		color: #FFF;
+		padding: 10px;
+		position: relative;
+	}
+	.num {	
+		font-size: 38px;
+	  font-weight: 700;
+	  margin: 0 0 10px 0;
+	  padding: 0;
+	  white-space: nowrap;
+	}
+}
+
+.icon-large {
+	color: rgba(0, 0, 0, 0.15);
+	font-size: 70px;
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+select {
+	display: block;
+	height: 34px;
+	margin-top: 6px;
+	width: 100%;
+}
+
+.presentation-dropdown {
+	margin-bottom: 15px;
+}
 
 @media only screen and (max-width: 767px) {
 	.logos {
