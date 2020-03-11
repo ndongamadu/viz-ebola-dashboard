@@ -20,3 +20,8 @@ dist/
 
 # Mac files
 .DS_Store
+
+# Data
+public/data/*.csv
+
+todo
