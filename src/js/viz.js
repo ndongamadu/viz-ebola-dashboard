@@ -155,7 +155,7 @@ $( document ).ready(function() {
 
     barChart = c3.generate({
         bindto: '#mainChart',
-        padding: { left: 120
+        padding: { left: 150
         },
         size: { height: 250 },
         color: {
@@ -171,6 +171,7 @@ $( document ).ready(function() {
             x: {
                 type: 'category',
                 tick: {
+                    multiline: false,
                     centered: true,
                     outer: false
                 }
