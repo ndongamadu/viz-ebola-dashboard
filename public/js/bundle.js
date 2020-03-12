@@ -43,6 +43,7 @@ $( document ).ready(function() {
       healthzonesList = [];
 
   let primeColor = '#0073b7' ;
+  let dataTableData = [];
 
 
 // -- all global vars //
@@ -172,10 +173,21 @@ $( document ).ready(function() {
     mainChart.load({
       unload: loadedCharts, 
       color: primeColor,
-      columns: filteredData,
+      columns: [filteredData[0],filteredData[1]]
     });
 
+    $('#datatable').dataTable().fnClearTable();
+    $('#datatable').dataTable().fnAddData(filteredData[2]);
+    // drawTable(filteredData[2]);
   }//updateDashoard
+
+  function drawTable (argument) {
+    $('#datatable').DataTable({
+      data : argument,
+      "bFilter" : false,
+      "bLengthChange" : false
+    });
+  } //drawTable
 
   function drawCharts (argument) {
     var data = getCommunityFeedbackData();
@@ -191,7 +203,7 @@ $( document ).ready(function() {
         },
         data: {
             x: 'x',
-            columns: data,
+            columns: [data[0], data[1]],
             type: 'bar',
         },
         axis: {
@@ -244,6 +256,7 @@ $( document ).ready(function() {
 
     mainChart = barChart ;
     // mainChart = lineChart ;
+    drawTable(data[2]);
   }//drawCharts
 
   var sort_value = function (d1, d2) {
@@ -276,6 +289,11 @@ $( document ).ready(function() {
     data = data.filter(function(d){ return d['health_zone'] == selectionHZ; });
     // data = data.filter(function(d){ return d['type'] == selectionType; });
 
+    //set datatable data 
+    var dataT = [];
+    for (var i = 0; i < data.length; i++) {
+      dataT.push([data[i]['category'], data[i]['sample_comments'], data[i]['health_zone']]);
+    }
 
     var dataByMetric = d3.nest()
         .key(function(d) { return d['category']; })
@@ -308,7 +326,7 @@ $( document ).ready(function() {
       
     }
 
-    return [xCategoryArr, yCategoryArr]
+    return [xCategoryArr, yCategoryArr, dataT]
   } //getCommunityFeedbackData
 
   function createMarker (d) {
