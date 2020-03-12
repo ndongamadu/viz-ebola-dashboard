@@ -64,8 +64,8 @@ $( document ).ready(function() {
         .key(function(d){ return d['health_zone']; })
         .rollup(function(v){
           return {
-            cases: d3.sum(v, function(d){ return d['confirmed_cases']; }),
-            deaths: d3.sum(v, function(d){ return d['confirmed_deaths']; })
+            cases: d3.sum(v, function(d){ return d['confirmed_cases_change']; }),
+            deaths: d3.sum(v, function(d){ return d['confirmed_deaths_change']; })
           };})
         .entries(data);
 
