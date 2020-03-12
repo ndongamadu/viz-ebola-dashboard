@@ -197,7 +197,7 @@ $( document ).ready(function() {
         bindto: '#mainChart',
         padding: { left: 150
         },
-        size: { height: 250 },
+        size: { height: 300 },
         color: {
           primeColor
         },
@@ -331,9 +331,11 @@ $( document ).ready(function() {
 
   function createMarker (d) {
     return L.marker([d.lat, d.lon], {
-        icon: L.divIcon({
-            className: 'circle',
-            iconSize: null//[15,15]
+        icon: L.icon({
+            // className: 'circle',
+            iconUrl: '/assets/healthsite-marker-red.png',
+            iconSize: [38,50],
+            iconAnchor: [20, 60]
         })
     }) 
   }//createMarker
