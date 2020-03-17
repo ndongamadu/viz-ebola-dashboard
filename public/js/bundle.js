@@ -303,7 +303,7 @@ $( document ).ready(function() {
     var total = d3.sum(dataByMetric, function(d){ return d['value']; });
 
     dataByMetric.forEach( function(element, index) {
-      var pct = ((element['value'] / total) * 100).toFixed(2);
+      var pct = Number(((element['value'] / total) * 100).toFixed(2));
       element['value'] = pct;
     })
     dataByMetric.sort(sort_value);
