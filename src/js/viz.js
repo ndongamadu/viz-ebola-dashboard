@@ -17,6 +17,10 @@ $( document ).ready(function() {
   let primeColor = '#0073b7' ;
   let dataTableData = [];
 
+  let multiBarCharts = false;
+  let switchTrend = false;
+
+
 
 // -- all global vars //
 
@@ -70,6 +74,16 @@ $( document ).ready(function() {
         .enter().append("option")
           .text(function(d){ return d; })
           .attr("value", function(d){ return d; });
+    
+    $(".category-dropdown").multipleSelect({
+      minimumCountSelected : 1,
+      // formatCountSelected:function (d) {
+      //   return '{0}/{1} categories';
+      // },
+      onClose: function(){
+        getCategories();
+      }
+     });
 
     var dropdwonHealthZone = d3.select(".health-zone-dropdown")
         .selectAll("option")
@@ -99,28 +113,38 @@ $( document ).ready(function() {
 
   }//setFilters
 
-  function getFilters (argument) {
-    // body... 
+  function selectValue (argument) {
+    $('.category-dropdown').multipleSelect('setSelects', categoriesList[0]);
+  }
+
+  function getCategories (argument) {
+    // var cats = $('.category-dropdown').val();
+    updateDashoard();
   } //getFilters
 
   //from date on change 
   $('#from').datepicker().on('change', function(e){
     updateDashoard();
+    updateDataTable();
   });
 
   //to date on change 
   $('#to').on('changeDate', function(e){
     updateDashoard();
+    updateDataTable();
   });
 
   //filter type on change
   $('.type-dropdown').on('change', function(e){
     updateDashoard();
+    updateDataTable();
   });
+
 
   //filter healthzone on change
   $('.health-zone-dropdown').on('change', function(e){
     updateDashoard();
+    updateDataTable();
   });
 
   //radio Trend analysis checked
@@ -130,7 +154,6 @@ $( document ).ready(function() {
 
   //get filters values and update chart accordingly 
   function updateDashoard () {
-
     setKeyFigures();
     var filteredData = getCommunityFeedbackData();
 
@@ -148,87 +171,131 @@ $( document ).ready(function() {
       columns: [filteredData[0],filteredData[1]]
     });
 
-    $('#datatable').dataTable().fnClearTable();
-    $('#datatable').dataTable().fnAddData(filteredData[2]);
     // drawTable(filteredData[2]);
   }//updateDashoard
 
+  function updateDataTable (argument) {
+    $('#datatable').dataTable().fnClearTable();
+    $('#datatable').dataTable().fnAddData(dataTableData); 
+  }
+
   function drawTable (argument) {
     $('#datatable').DataTable({
-      data : argument,
+      data : dataTableData,
       "bFilter" : false,
       "bLengthChange" : false
     });
   } //drawTable
 
   function drawCharts (argument) {
-    var data = getCommunityFeedbackData();
-    var barChart, lineChart = '';
+    var data = getCommunityFeedbackData(); // returns [x, y, datatable]
+    var barChart = '';
 
-    barChart = c3.generate({
-        bindto: '#mainChart',
-        padding: { left: 150
-        },
-        size: { height: 300 },
-        color: {
-          primeColor
-        },
-        data: {
-            x: 'x',
-            columns: [data[0], data[1]],
-            type: 'bar',
-        },
-        axis: {
-            rotated: true,
-            x: {
-                type: 'category',
-                tick: {
-                    multiline: false,
-                    centered: true,
-                    outer: false
-                }
+    if (! switchTrend) {
+      if (multiBarCharts) {
+        //multiBarCharts
+        barChart = c3.generate({
+            bindto: '#mainChart',
+            padding: { left: 150
             },
-            y: { show: false }
-        },
-        legend: { hide: 'x' }
-    });
-
-    // lineChart = c3.generate({
-    //     bindto: '#mainChart',
-    //     size: { height: 250 },
-    //     padding: { left: 20 },
-    //     color: {
-    //       primeColor
-    //     },
-    //     data: {
-    //         x: 'x',
-    //         columns: [
-    //           ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
-    //           ['data1', 30, 200, 100, 400, 150, 250]
-    //         ]
-    //     },
-    //     axis: {
-    //         x: {
-    //             type: 'timeseries',
-    //             localtime: false,
-    //             tick: {
-    //                 culling: { max: 4 },
-    //                 format: '%b %Y',
-    //                 outer: false
-    //             }
-    //         },
-    //         y: {
-    //             tick: {
-    //                 count: 5,
-    //             },
-    //             show : false
-    //         }
-    //     }
-    // });
+            size: { height: 300 },
+            color: {
+              primeColor
+            },
+            data: {
+                x: 'x',
+                columns: [
+                  ['x', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5',],
+                  ['data1', 2, 3, 5, 6,7],
+                  ['data2', 6,5,8,2,1]
+                ],
+                type: 'bar',
+                group: [
+                  ['data1', 'data2']
+                ],
+            },
+            axis: {
+                rotated: true,
+                x: {
+                    type: 'category',
+                    tick: {
+                        multiline: false,
+                        centered: true,
+                        outer: false
+                    }
+                },
+                y: { show: false }
+            },
+            legend: { hide: 'x' }
+        });
+      } else {
+        // one bar chart
+        barChart = c3.generate({
+            bindto: '#mainChart',
+            padding: { left: 150
+            },
+            size: { height: 300 },
+            color: {
+              primeColor
+            },
+            data: {
+                x: 'x',
+                columns: [data[0], data[1]],
+                type: 'bar',
+            },
+            axis: {
+                rotated: true,
+                x: {
+                    type: 'category',
+                    tick: {
+                        multiline: false,
+                        centered: true,
+                        outer: false
+                    }
+                },
+                y: { show: false }
+            },
+            legend: { hide: 'x' }
+        });
+      }
+    } else {
+      //trend
+      barChart = c3.generate({
+          bindto: '#mainChart',
+          size: { height: 250 },
+          padding: { left: 20 },
+          color: {
+            primeColor
+          },
+          data: {
+              x: 'x',
+              columns: [
+                ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
+                ['data1', 30, 200, 100, 400, 150, 250]
+              ]
+          },
+          axis: {
+              x: {
+                  type: 'timeseries',
+                  localtime: false,
+                  tick: {
+                      culling: { max: 4 },
+                      format: '%b %Y',
+                      outer: false
+                  }
+              },
+              y: {
+                  tick: {
+                      count: 5,
+                  },
+                  show : false
+              }
+          }
+      });
+    }
 
     mainChart = barChart ;
-    // mainChart = lineChart ;
-    drawTable(data[2]);
+    drawTable(dataTableData);
   }//drawCharts
 
   var sort_value = function (d1, d2) {
@@ -246,7 +313,7 @@ $( document ).ready(function() {
     var selectionType = $('.type-dropdown option:selected').text();
 
     //get selected category
-    var selectionCategory = $('.category-dropdown option:selected').text();
+    var selectionCategory = $('.category-dropdown').val();
 
     //get selected healthzone
     var selectionHZ = $('.health-zone-dropdown option:selected').text();
@@ -259,46 +326,78 @@ $( document ).ready(function() {
     
     data = data.filter(function(d){ return d['type'] == selectionType; });
     data = data.filter(function(d){ return d['health_zone'] == selectionHZ; });
-    // data = data.filter(function(d){ return d['type'] == selectionType; });
+
+    if (selectionCategory !=null) {
+      selectionCategory > 1 ? multiBarCharts=true : '';
+      for (var i = 0; i < selectionCategory.length; i++) {
+        data = data.filter(function(d){ return d['category'] == selectionCategory[i]; });
+      }
+    } 
 
     //set datatable data 
     var dataT = [];
     for (var i = 0; i < data.length; i++) {
       dataT.push([data[i]['category'], data[i]['sample_comments'], data[i]['health_zone']]);
     }
+    dataTableData = dataT;
 
     var dataByMetric = d3.nest()
+        .key(function(d) { return d['health_zone']; })
         .key(function(d) { return d['category']; })
         .rollup(function(v){ return d3.sum(v, function(d){ return d['n']; }); })
         .entries(data);
-    
-    var total = d3.sum(dataByMetric, function(d){ return d['value']; });
 
-    dataByMetric.forEach( function(element, index) {
-      var pct = ((element['value'] / total) * 100).toFixed(2);
-      element['value'] = pct;
-    })
-    dataByMetric.sort(sort_value);
+    //depending on number of health zone selected
+    var numberOfHealthZone = 1;
+    var total = 0;
 
-    var numCategory = 5 ;
-    var xCategoryArr = ['x'],
-        yCategoryArr = []; //first value should behealthzone filter value
+    var numCategory    = 5 ;
+    var xCategoryArr   = ['x'],
+        yCategoryArr   = [],
+        yCategoriesArr = [];
 
-    yCategoryArr[0] = selectionHZ;
-    if (dataByMetric.length >= numCategory) {
-      for (var i = 0; i < numCategory; i++) {
-        xCategoryArr.push(dataByMetric[i].key);
-        yCategoryArr.push(parseFloat(dataByMetric[i].value));
+    if (numberOfHealthZone==1) {
+      total = d3.sum(dataByMetric[0].values, function(d){ return d['value']; });
+      dataByMetric[0].values.forEach( function(element, index) {
+        var pct = Number(((element['value'] / total) * 100).toFixed(2));
+        element['value'] = pct;
+      });
+      dataByMetric[0].values.sort(sort_value);
+      yCategoryArr[0] = selectionHZ;
+      if (dataByMetric[0].values.length >= numCategory) {
+        for (var i = 0; i < numCategory; i++) {
+          xCategoryArr.push(dataByMetric[0].values[i].key);
+          yCategoryArr.push(parseFloat(dataByMetric[0].values[i].value));
+        }
+      } else {
+        for (var i = 0; i < dataByMetric.length; i++) {
+          xCategoryArr.push(dataByMetric[i].key);
+          yCategoryArr.push(parseFloat(dataByMetric[i].value));
+        }
       }
+
     } else {
-      for (var i = 0; i < dataByMetric.length; i++) {
-        xCategoryArr.push(dataByMetric[i].key);
-        yCategoryArr.push(parseFloat(dataByMetric[i].value));
-      }
-      
-    }
+      dataByMetric.forEach( function(element, index) {
+        total = d3.sum(element.values, function(d){ return d['value']; });
+        element.values.forEach( function(element, index) {
+          var pct = Number(((element['value'] / total) * 100).toFixed(2));
+          element['value'] = pct;
+        });
+        element.values.sort(sort_value);
+        var arr = [];
+        arr[0] = element.key; 
+        if (element.values.length >= numCategory) {
+          xCategoryArr.push(element.key);
+          for (var i = 0; i < numCategory; i++) {
+            arr.push(element.values[i].value)
+          }
+        } else {
+          // second expression
+        }
+      });
+    } 
 
-    return [xCategoryArr, yCategoryArr, dataT]
+    return [xCategoryArr, yCategoryArr]
   } //getCommunityFeedbackData
 
   function createMarker (d) {

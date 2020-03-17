@@ -188,14 +188,15 @@ h4 {
   color: #9d9d9d;
   padding-right: 10px; }
 
-ul {
+ul.align-right  {
   align-items: center;
   display: flex;
   margin: 0;
-  padding: 0; }
+  padding: 0; 
+}
   ul.align-right {
     margin-left: auto; }
-  ul li {
+  ul.li.align-right  {
     list-style-type: none;
     padding: 0 0 0 10px; }
 
@@ -265,6 +266,9 @@ select {
   margin-top: 6px;
   width: 100%; }
 
+/*.category-dropdown {
+  width: 300px;
+}*/
 .presentation-dropdown {
   margin-bottom: 15px; }
 
