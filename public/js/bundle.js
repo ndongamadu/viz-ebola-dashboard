@@ -96,14 +96,15 @@ $( document ).ready(function() {
           .text(function(d){ return d ;})
           .attr("value", function(d){ return d; });
 
-    var dropdwonCategory = d3.select(".category-dropdown")
+    var dropdownCategory = d3.select(".category-dropdown")
         .selectAll("option")
         .data(categoriesList)
         .enter().append("option")
           .text(function(d){ return d; })
           .attr("value", function(d){ return d; });
+
     
-    $(".category-dropdown").multipleSelect({
+    $("#categoryDropdown").multipleSelect({
       minimumCountSelected : 1,
       // formatCountSelected:function (d) {
       //   return '{0}/{1} categories';
@@ -112,6 +113,24 @@ $( document ).ready(function() {
         getCategories();
       }
      });
+
+    $("#categoryDropdown").multipleSelect("checkAll");
+
+    //num categories slider
+    var handle = $("#custom-handle");
+    $("#categorySlider").slider({
+      min: 1,
+      max: categoriesList.length,
+      create: function() {
+        handle.text($(this).slider("value"));
+      },
+      slide: function(event, ui) {
+        //$( "#amount" ).val( "$" + ui.value );
+        handle.text(ui.value)
+        console.log(ui.value)
+      }
+    });
+    $('.slider-range').find('.max').text(categoriesList.length);
 
     var dropdwonHealthZone = d3.select(".health-zone-dropdown")
         .selectAll("option")
@@ -217,6 +236,7 @@ $( document ).ready(function() {
 
   function drawCharts (argument) {
     var data = getCommunityFeedbackData(); // returns [x, y, datatable]
+    console.log('data',data)
     var barChart = '';
 
     if (! switchTrend) {
@@ -332,6 +352,18 @@ $( document ).ready(function() {
     return 0;
   }
 
+  function filterByCategory(item) {
+    var included = false;
+    for (var i=0; i<selectionCategory.length; i++) {
+      if (item['category'] == selectionCategory[i]) {
+        included = true;
+        break;
+      }
+    }
+    return included;
+  }
+
+  var selectionCategory;
   function getCommunityFeedbackData () {
     //get from-to date
     fromDate = $("#from").datepicker('getDate');
@@ -341,7 +373,7 @@ $( document ).ready(function() {
     var selectionType = $('.type-dropdown option:selected').text();
 
     //get selected category
-    var selectionCategory = $('.category-dropdown').val();
+    selectionCategory = $('.category-dropdown').val();
 
     //get selected healthzone
     var selectionHZ = $('.health-zone-dropdown option:selected').text();
@@ -351,15 +383,13 @@ $( document ).ready(function() {
       var dt = new Date(d['date']) ;
       return fromDate <= dt <= toDate ;
     });
-    
+
     data = data.filter(function(d){ return d['type'] == selectionType; });
     data = data.filter(function(d){ return d['health_zone'] == selectionHZ; });
 
-    if (selectionCategory !=null) {
-      selectionCategory > 1 ? multiBarCharts=true : '';
-      for (var i = 0; i < selectionCategory.length; i++) {
-        data = data.filter(function(d){ return d['category'] == selectionCategory[i]; });
-      }
+    if (selectionCategory != null) {
+      multiBarCharts = selectionCategory.length > 1 ? true : false;
+      data = data.filter(filterByCategory);
     } 
 
     //set datatable data 
@@ -385,6 +415,7 @@ $( document ).ready(function() {
         yCategoriesArr = [];
 
     if (numberOfHealthZone==1) {
+      console.log(dataByMetric[0])
       total = d3.sum(dataByMetric[0].values, function(d){ return d['value']; });
       dataByMetric[0].values.forEach( function(element, index) {
         var pct = Number(((element['value'] / total) * 100).toFixed(2));
