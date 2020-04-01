@@ -32,6 +32,7 @@ $( document ).ready(function() {
     //get selected healthzone
     var selectionHZ = $('.health-zone-dropdown option:selected').text();
     var data = burdenData;
+    selectionHZ = 'Beni';
 
     //filter data through date range
     
@@ -61,6 +62,24 @@ $( document ).ready(function() {
       healthzonesList.includes(element['health_zone']) ? '': healthzonesList.push(element['health_zone']);
     });
 
+    //num categories slider
+    var handle = $("#custom-handle");
+    $("#categorySlider").slider({
+      min: 1,
+      max: categoriesList.length,
+      value:5,
+      create: function() {
+        handle.text($(this).slider("value"));
+      },
+      slide: function(event, ui) {
+        //$( "#amount" ).val( "$" + ui.value );
+        handle.text(ui.value);
+        updateDashoard();
+        
+      }
+    });
+    $('.slider-range').find('.max').text(categoriesList.length);
+
     var dropdownType = d3.select(".type-dropdown")
         .selectAll("option")
         .data(typesList)
@@ -88,28 +107,23 @@ $( document ).ready(function() {
 
     $("#categoryDropdown").multipleSelect("checkAll");
 
-    //num categories slider
-    var handle = $("#custom-handle");
-    $("#categorySlider").slider({
-      min: 1,
-      max: categoriesList.length,
-      create: function() {
-        handle.text($(this).slider("value"));
-      },
-      slide: function(event, ui) {
-        //$( "#amount" ).val( "$" + ui.value );
-        handle.text(ui.value)
-        console.log(ui.value)
-      }
-    });
-    $('.slider-range').find('.max').text(categoriesList.length);
-
     var dropdwonHealthZone = d3.select(".health-zone-dropdown")
         .selectAll("option")
         .data(healthzonesList)
         .enter().append("option")
           .text(function(d){ return d; })
           .attr("value", function(d){ return d; });
+
+    $("#healthZoneDropdown").multipleSelect({
+      minimumCountSelected: 1,
+      onClose: function(){
+        updateDashoard();
+      }
+    });
+    $("#healthZoneDropdown").val(["Beni"]);
+    $("#healthZoneDropdown").multipleSelect("refresh");
+
+
 
     var miniDate = new Date(d3.min(communityData,function(d){return d['date'];}));
     var maxiDate = new Date(d3.max(communityData,function(d){return d['date'];}));
@@ -161,10 +175,10 @@ $( document ).ready(function() {
 
 
   //filter healthzone on change
-  $('.health-zone-dropdown').on('change', function(e){
-    updateDashoard();
-    updateDataTable();
-  });
+  // $('.health-zone-dropdown').on('change', function(e){
+  //   updateDashoard();
+  //   updateDataTable();
+  // });
 
   //radio Trend analysis checked
   $('#trendAnalysis').change(function(d){
@@ -174,23 +188,30 @@ $( document ).ready(function() {
   //get filters values and update chart accordingly 
   function updateDashoard () {
     setKeyFigures();
-    var filteredData = getCommunityFeedbackData();
-
-    var selectionHZ = $('.health-zone-dropdown option:selected').text();
-    filteredData[1][0] = selectionHZ ;
-
-    var charts = mainChart.data.shown();
-    var loadedCharts = [];
-    for ( k in charts){
-      loadedCharts.push(charts[k].id)
+    if (mainChart == undefined) {
+      console.log("mainchart undefined")
+    } else {
+      // mainchart.destroy();
+      mainchart = null;
     }
-    mainChart.load({
-      unload: loadedCharts, 
-      color: primeColor,
-      columns: [filteredData[0],filteredData[1]]
-    });
+    // var filteredData = getCommunityFeedbackData();
+
+    // var selectionHZ = $('.health-zone-dropdown option:selected').text();
+    // filteredData[1][0] = selectionHZ ;
+    drawCharts();
+    // var charts = mainChart.data.shown();
+    // var loadedCharts = [];
+    // for ( k in charts){
+    //   loadedCharts.push(charts[k].id)
+    // }
+    // mainChart.load({
+    //   unload: loadedCharts, 
+    //   color: primeColor,
+    //   columns: [filteredData[0],filteredData[1]]
+    // });
 
     // drawTable(filteredData[2]);
+    updateDataTable();
   }//updateDashoard
 
   function updateDataTable (argument) {
@@ -207,14 +228,12 @@ $( document ).ready(function() {
   } //drawTable
 
   function drawCharts (argument) {
-    var data = getCommunityFeedbackData(); // returns [x, y, datatable]
-    console.log('data',data)
-    var barChart = '';
+    var data = getCommunityFeedbackData(); // returns [x, y, z]
 
     if (! switchTrend) {
       if (multiBarCharts) {
         //multiBarCharts
-        barChart = c3.generate({
+        mainChart = c3.generate({
             bindto: '#mainChart',
             padding: { left: 150
             },
@@ -224,15 +243,9 @@ $( document ).ready(function() {
             },
             data: {
                 x: 'x',
-                columns: [
-                  ['x', 'cat1', 'cat2', 'cat3', 'cat4', 'cat5',],
-                  ['data1', 2, 3, 5, 6,7],
-                  ['data2', 6,5,8,2,1]
-                ],
+                columns: data[0],
                 type: 'bar',
-                group: [
-                  ['data1', 'data2']
-                ],
+                group: [data[1]],
             },
             axis: {
                 rotated: true,
@@ -250,7 +263,7 @@ $( document ).ready(function() {
         });
       } else {
         // one bar chart
-        barChart = c3.generate({
+        mainChart = c3.generate({
             bindto: '#mainChart',
             padding: { left: 150
             },
@@ -280,7 +293,7 @@ $( document ).ready(function() {
       }
     } else {
       //trend
-      barChart = c3.generate({
+      mainChart = c3.generate({
           bindto: '#mainChart',
           size: { height: 250 },
           padding: { left: 20 },
@@ -314,8 +327,6 @@ $( document ).ready(function() {
       });
     }
 
-    mainChart = barChart ;
-    drawTable(dataTableData);
   }//drawCharts
 
   var sort_value = function (d1, d2) {
@@ -335,7 +346,19 @@ $( document ).ready(function() {
     return included;
   }
 
+  function filterByHealthZone(item) {
+    var included = false;
+    for (var i=0; i<selectionHZ.length; i++) {
+      if (item['health_zone'] == selectionHZ[i]) {
+        included = true;
+        break;
+      }
+    }
+    return included;
+  }
+
   var selectionCategory;
+  var selectionHZ;
   function getCommunityFeedbackData () {
     //get from-to date
     fromDate = $("#from").datepicker('getDate');
@@ -348,22 +371,21 @@ $( document ).ready(function() {
     selectionCategory = $('.category-dropdown').val();
 
     //get selected healthzone
-    var selectionHZ = $('.health-zone-dropdown option:selected').text();
+    selectionHZ = $('.health-zone-dropdown').val();
 
     var data = communityData;
+    data = data.filter(function(d){ return d['type'] == selectionType; });
+
     data = data.filter(function(d){
       var dt = new Date(d['date']) ;
       return fromDate <= dt <= toDate ;
     });
 
-    data = data.filter(function(d){ return d['type'] == selectionType; });
-    data = data.filter(function(d){ return d['health_zone'] == selectionHZ; });
+    data = data.filter(filterByCategory);
 
-    if (selectionCategory != null) {
-      multiBarCharts = selectionCategory.length > 1 ? true : false;
-      data = data.filter(filterByCategory);
-    } 
+    data = data.filter(filterByHealthZone);
 
+    multiBarCharts = selectionHZ.length > 1 ? true : false;
     //set datatable data 
     var dataT = [];
     for (var i = 0; i < data.length; i++) {
@@ -381,13 +403,11 @@ $( document ).ready(function() {
     var numberOfHealthZone = 1;
     var total = 0;
 
-    var numCategory    = 5 ;
+    var numCategory    = $("#categorySlider").slider("value");
     var xCategoryArr   = ['x'],
-        yCategoryArr   = [],
-        yCategoriesArr = [];
+        yCategoryArr   = [];
 
-    if (numberOfHealthZone==1) {
-      console.log(dataByMetric[0])
+    if (! multiBarCharts) {
       total = d3.sum(dataByMetric[0].values, function(d){ return d['value']; });
       dataByMetric[0].values.forEach( function(element, index) {
         var pct = Number(((element['value'] / total) * 100).toFixed(2));
@@ -395,40 +415,45 @@ $( document ).ready(function() {
       });
       dataByMetric[0].values.sort(sort_value);
       yCategoryArr[0] = selectionHZ;
-      if (dataByMetric[0].values.length >= numCategory) {
-        for (var i = 0; i < numCategory; i++) {
-          xCategoryArr.push(dataByMetric[0].values[i].key);
-          yCategoryArr.push(parseFloat(dataByMetric[0].values[i].value));
-        }
-      } else {
-        for (var i = 0; i < dataByMetric.length; i++) {
-          xCategoryArr.push(dataByMetric[i].key);
-          yCategoryArr.push(parseFloat(dataByMetric[i].value));
-        }
+      for (var i = 0; i <= numCategory-1; i++) {
+        xCategoryArr.push(dataByMetric[0].values[i].key);
+        yCategoryArr.push(parseFloat(dataByMetric[0].values[i].value));
       }
-
+    return [xCategoryArr, yCategoryArr];
     } else {
+      for (var i = 0; i <= numCategory-1; i++) {
+        selectionCategory[i] != undefined ? xCategoryArr.push(selectionCategory[i]) : '';
+      }
+      yCategoryArr.push(xCategoryArr);
+      var dataNames = [];
       dataByMetric.forEach( function(element, index) {
+        dataNames.push(element.key);
         total = d3.sum(element.values, function(d){ return d['value']; });
         element.values.forEach( function(element, index) {
           var pct = Number(((element['value'] / total) * 100).toFixed(2));
           element['value'] = pct;
         });
-        element.values.sort(sort_value);
-        var arr = [];
-        arr[0] = element.key; 
-        if (element.values.length >= numCategory) {
-          xCategoryArr.push(element.key);
-          for (var i = 0; i < numCategory; i++) {
-            arr.push(element.values[i].value)
-          }
-        } else {
-          // second expression
-        }
-      });
-    } 
 
-    return [xCategoryArr, yCategoryArr]
+        element.values.sort(sort_value);
+
+        var arr = [];
+        arr[0] = element.key;
+        for (var i = 0; i < xCategoryArr.length; i++) {
+          var val = 0;
+          element.values.forEach( function(ele, ind) {
+            ele.key===xCategoryArr[i] ? val= ele.value : '';
+          });
+          arr.push(val);
+        }
+        yCategoryArr.push(arr);
+      });
+      return [yCategoryArr, dataNames];
+    }
+
+    // console.log(xCategoryArr)
+    // console.log(yCategoryArr)
+    // console.log(yCategoriesArr)
+    // return [xCategoryArr, yCategoryArr]
   } //getCommunityFeedbackData
 
   function createMarker (d) {
@@ -493,6 +518,7 @@ $( document ).ready(function() {
       setFilters();
       setKeyFigures();
       drawCharts();
+      drawTable();
       generateMap();
       
     });
