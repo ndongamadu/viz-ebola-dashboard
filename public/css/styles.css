@@ -296,3 +296,6 @@ select {
     text-align: center; }
   .logos img {
     margin: 10px; } }
+
+#map {
+  height: 350px; }

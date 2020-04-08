@@ -32,11 +32,11 @@ $( document ).ready(function() {
   const DATA_URL = 'data/';
   let isMobile = $(window).width()<600? true : false;
   let communityFeedbackURL = 'data/Data_ DRC Ebola response community feedback - community_feedback.csv';
-  // let communityFeedbackURL = 'data/community_feedback.csv';
-
+  let categoryDefinitionURL = 'data/Data_ DRC Ebola response community feedback - category_definition.csv';
   let burdenURL = 'data/Data_ DRC Ebola response community feedback - ebola_burden_all.csv' ;
   let locationsURL = 'data/Data_ DRC Ebola response community feedback - locations.csv' ;
-  let communityData, locationsData, burdenData = '';
+  let communityData, locationsData, burdenData, categoryDefinition = '';
+  
   let mainChart ;
   let typesList       = [],
       categoriesList  = [],
@@ -48,6 +48,7 @@ $( document ).ready(function() {
   let multiBarCharts = false;
   let switchTrend = false;
 
+  var percentageFormat = function(d){return d + '%'; };
 
 
 // -- all global vars //
@@ -82,11 +83,58 @@ $( document ).ready(function() {
     $('#feedbacks').text(totalFeedback);
   }//setKeyFigures
 
+  function setCategoryFilter (argument) {
+    var selectionType ;
+    argument==undefined ? selectionType= 'Rumors_beliefs_observations' : selectionType = argument;
+    var dataByType = d3.nest()
+        .key(function(d){ return d['type'];})
+        .key(function(d){ return d['category']; })
+        .entries(communityData);
+    var set = [],
+        cat = [];
+    for (var i = 0; i < dataByType.length; i++) {
+      dataByType[i].key === selectionType ? set = dataByType[i].values : '';
+    }
+    set.forEach( function(element, index) {
+      cat.push(element.key);
+    });
+    categoriesList = cat;
+    var dropdownCategory = d3.select(".category-dropdown")
+      .selectAll("option")
+      .data(categoriesList)
+      .enter().append("option")
+        .text(function(d){ return d; })
+        .attr("value", function(d){ return d; });
+
+    if (argument==undefined) {
+      $("#categoryDropdown").multipleSelect({
+        minimumCountSelected : 1,
+        onClose: function(){
+          updateDashoard();
+        }
+      });
+    } else {
+      // refresh dropdown options
+      $("#categoryDropdown").multipleSelect('destroy')
+      $("#categoryDropdown").multipleSelect({
+        data: cat,
+        onClose: function(){
+          return updateDashoard();
+          // updateDataTable();
+        }
+      });
+      $("#categoryDropdown").multipleSelect('refresh');
+    }
+
+    $("#categoryDropdown").multipleSelect("checkAll");
+  }//updateCategoryFilter
+
+
   function setFilters (argument) {
+    setCategoryFilter();
     // should maybe use other data source
     communityData.forEach( function(element, index) {
       typesList.includes(element['type']) ? '': typesList.push(element['type']);
-      categoriesList.includes(element['category']) ? '': categoriesList.push(element['category']);
       healthzonesList.includes(element['health_zone']) ? '': healthzonesList.push(element['health_zone']);
     });
 
@@ -103,6 +151,7 @@ $( document ).ready(function() {
         //$( "#amount" ).val( "$" + ui.value );
         handle.text(ui.value);
         updateDashoard();
+        updateDataTable();
         
       }
     });
@@ -114,26 +163,7 @@ $( document ).ready(function() {
         .enter().append("option")
           .text(function(d){ return d ;})
           .attr("value", function(d){ return d; });
-
-    var dropdownCategory = d3.select(".category-dropdown")
-        .selectAll("option")
-        .data(categoriesList)
-        .enter().append("option")
-          .text(function(d){ return d; })
-          .attr("value", function(d){ return d; });
-
-    
-    $("#categoryDropdown").multipleSelect({
-      minimumCountSelected : 1,
-      // formatCountSelected:function (d) {
-      //   return '{0}/{1} categories';
-      // },
-      onClose: function(){
-        getCategories();
-      }
-     });
-
-    $("#categoryDropdown").multipleSelect("checkAll");
+    $(".type-dropdown").val("Rumors_beliefs_observations");
 
     var dropdwonHealthZone = d3.select(".health-zone-dropdown")
         .selectAll("option")
@@ -146,12 +176,11 @@ $( document ).ready(function() {
       minimumCountSelected: 1,
       onClose: function(){
         updateDashoard();
+        updateDataTable();
       }
     });
     $("#healthZoneDropdown").val(["Beni"]);
     $("#healthZoneDropdown").multipleSelect("refresh");
-
-
 
     var miniDate = new Date(d3.min(communityData,function(d){return d['date'];}));
     var maxiDate = new Date(d3.max(communityData,function(d){return d['date'];}));
@@ -162,51 +191,47 @@ $( document ).ready(function() {
           dateFormat : dateFormat,
           minDate : miniDate,
           maxDate : maxiDate
+        }).on("change", function(){
+          console.log("date changed");
         });
     var to = $("#to")
         .datepicker({
           dateFormat : dateFormat,
           minDate : miniDate,
           maxDate : maxiDate
+        }).on("change", function(){
+          updateDashoard();
+          updateDataTable();
+          console.log("updated")
         });
     $("#from").datepicker( "setDate" , miniDate );
     $("#to").datepicker( "setDate" , maxiDate );
 
   }//setFilters
 
-  function selectValue (argument) {
-    $('.category-dropdown').multipleSelect('setSelects', categoriesList[0]);
-  }
 
-  function getCategories (argument) {
-    // var cats = $('.category-dropdown').val();
-    updateDashoard();
-  } //getFilters
-
-  //from date on change 
-  $('#from').datepicker().on('change', function(e){
-    updateDashoard();
-    updateDataTable();
-  });
-
-  //to date on change 
-  $('#to').on('changeDate', function(e){
-    updateDashoard();
-    updateDataTable();
-  });
-
-  //filter type on change
-  $('.type-dropdown').on('change', function(e){
-    updateDashoard();
-    updateDataTable();
-  });
-
-
-  //filter healthzone on change
-  // $('.health-zone-dropdown').on('change', function(e){
+  // //from date on change 
+  // $('#from').datepicker().on('change', function(e){
+  //   console.log("date changed")
   //   updateDashoard();
   //   updateDataTable();
   // });
+
+  // //to date on change 
+  // $('#to').on('changeDate', function(e){
+  //   updateDashoard();
+  //   updateDataTable();
+  // });
+
+  //filter type on change
+  $('.type-dropdown').on('change', function(e){
+    var select = $('.type-dropdown option:selected').text()
+    setCategoryFilter(select);
+    updateDashoard();
+    updateDataTable();
+    // slider max value should be updated accordingly
+    // $("#categorySlider").slider("option", "max", 8);
+  });
 
   //radio Trend analysis checked
   $('#trendAnalysis').change(function(d){
@@ -216,29 +241,8 @@ $( document ).ready(function() {
   //get filters values and update chart accordingly 
   function updateDashoard () {
     setKeyFigures();
-    if (mainChart == undefined) {
-      console.log("mainchart undefined")
-    } else {
-      // mainchart.destroy();
-      mainchart = null;
-    }
-    // var filteredData = getCommunityFeedbackData();
-
-    // var selectionHZ = $('.health-zone-dropdown option:selected').text();
-    // filteredData[1][0] = selectionHZ ;
+    mainChart===undefined ? '' : mainChart=null
     drawCharts();
-    // var charts = mainChart.data.shown();
-    // var loadedCharts = [];
-    // for ( k in charts){
-    //   loadedCharts.push(charts[k].id)
-    // }
-    // mainChart.load({
-    //   unload: loadedCharts, 
-    //   color: primeColor,
-    //   columns: [filteredData[0],filteredData[1]]
-    // });
-
-    // drawTable(filteredData[2]);
     updateDataTable();
   }//updateDashoard
 
@@ -263,7 +267,7 @@ $( document ).ready(function() {
         //multiBarCharts
         mainChart = c3.generate({
             bindto: '#mainChart',
-            padding: { left: 150
+            padding: { left: 250
             },
             size: { height: 300 },
             color: {
@@ -273,7 +277,7 @@ $( document ).ready(function() {
                 x: 'x',
                 columns: data[0],
                 type: 'bar',
-                group: [data[1]],
+                group: data[1],
             },
             axis: {
                 rotated: true,
@@ -285,15 +289,26 @@ $( document ).ready(function() {
                         outer: false
                     }
                 },
-                y: { show: false }
+                y: {
+                  tick: {
+                    centered: false,
+                    outer: false,
+                    count: 5
+                  }
+                }
             },
-            legend: { hide: 'x' }
+            legend: { hide: 'x' },
+            tooltip: {
+              format: {
+                value: percentageFormat
+              }
+            }
         });
       } else {
         // one bar chart
         mainChart = c3.generate({
             bindto: '#mainChart',
-            padding: { left: 150
+            padding: { left: 250
             },
             size: { height: 300 },
             color: {
@@ -314,9 +329,42 @@ $( document ).ready(function() {
                         outer: false
                     }
                 },
-                y: { show: false }
+                y: {
+                    centered: false,
+                    outer: false,
+                    count: 5
+                }
             },
-            legend: { hide: 'x' }
+            legend: { hide: 'x' },
+            tooltip: {
+                contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
+                    var $$ = this, config = $$.config,
+                        titleFormat = config.tooltip_format_title || defaultTitleFormat,
+                        nameFormat = config.tooltip_format_name || function (name) { return name; },
+                        valueFormat = config.tooltip_format_value || defaultValueFormat,
+                        text, i, title, value, name, bgcolor;
+                    for (i = 0; i < d.length; i++) {
+                        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+
+                        if (! text) {
+                            title = titleFormat ? titleFormat(d[i].x) : d[i].x;
+                            text = "<table class='" + $$.CLASS.tooltip + "'>" + (title || title === 0 ? "<tr><th colspan='2'>" + title + "</th></tr>" : "");
+                        }
+
+                        name = nameFormat(d[i].name);
+                        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+                        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+                        text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
+                        // text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+                        // text += "<td class='value'>" + value + "</td>";
+                        // text += "</tr>"; 
+                    }
+                    var message = categoryDefinition[title].en;
+                    text += "<tr><td>" + message + "</td></tr>";
+                    return text + "</table>";
+                }
+            }
         });
       }
     } else {
@@ -397,6 +445,8 @@ $( document ).ready(function() {
 
     //get selected category
     selectionCategory = $('.category-dropdown').val();
+    //(let's cheat)
+    selectionCategory===null ? selectionCategory=categoriesList : '';
 
     //get selected healthzone
     selectionHZ = $('.health-zone-dropdown').val();
@@ -461,9 +511,7 @@ $( document ).ready(function() {
           var pct = Number(((element['value'] / total) * 100).toFixed(2));
           element['value'] = pct;
         });
-
         element.values.sort(sort_value);
-
         var arr = [];
         arr[0] = element.key;
         for (var i = 0; i < xCategoryArr.length; i++) {
@@ -478,10 +526,6 @@ $( document ).ready(function() {
       return [yCategoryArr, dataNames];
     }
 
-    // console.log(xCategoryArr)
-    // console.log(yCategoryArr)
-    // console.log(yCategoriesArr)
-    // return [xCategoryArr, yCategoryArr]
   } //getCommunityFeedbackData
 
   function createMarker (d) {
@@ -506,7 +550,7 @@ $( document ).ready(function() {
         maxZoom : 10,
         minZoom: 4
       }); 
-    map.setView([-0.361, 29.053], 8); //-2.712/23.244 -4.579, 21.887
+    map.setView([-0.461, 29.530], 7); //-2.712/23.244 -4.579, 21.887
     L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/traffic-day-v2/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYW1hZG91MTciLCJhIjoib3NhRnROQSJ9.lW0PVXVIS-j8dGaULTyupg', { 
       attribution: '<a href="http://mapbox.com">Mapbox</a>'
     }).addTo(map);
@@ -537,12 +581,16 @@ $( document ).ready(function() {
     Promise.all([
       d3.csv(communityFeedbackURL),
       d3.csv(burdenURL),
-      d3.csv(locationsURL)
+      d3.csv(locationsURL),
+      d3.csv(categoryDefinitionURL)
     ]).then(function(data){
       communityData = data[0];
       burdenData = data[1];
       locationsData = data[2];
-
+      categoryDefinition = {};
+      data[3].forEach( function(element, index) {
+        categoryDefinition[element['category']] = {'en': element['category_definition'], 'fr': element['category_definition_fr']};
+      });
       setFilters();
       setKeyFigures();
       drawCharts();
