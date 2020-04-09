@@ -32,12 +32,16 @@ $( document ).ready(function() {
   const DATA_URL = 'data/';
   let isMobile = $(window).width()<600? true : false;
   let communityFeedbackURL = 'data/Data_ DRC Ebola response community feedback - community_feedback.csv';
+  // let communityFeedbackURL = 'data/test.csv';
+
   let categoryDefinitionURL = 'data/Data_ DRC Ebola response community feedback - category_definition.csv';
   let burdenURL = 'data/Data_ DRC Ebola response community feedback - ebola_burden_all.csv' ;
   let locationsURL = 'data/Data_ DRC Ebola response community feedback - locations.csv' ;
   let communityData, locationsData, burdenData, categoryDefinition = '';
   
+  let dataFormat = "DD/MM/YYYY" ;
   let mainChart ;
+  let trendChart ;
   let typesList       = [],
       categoriesList  = [],
       healthzonesList = [];
@@ -47,6 +51,8 @@ $( document ).ready(function() {
 
   let multiBarCharts = false;
   let switchTrend = false;
+
+  let dataForTrends = '';
 
   var percentageFormat = function(d){return d + '%'; };
 
@@ -192,7 +198,8 @@ $( document ).ready(function() {
           minDate : miniDate,
           maxDate : maxiDate
         }).on("change", function(){
-          console.log("date changed");
+          updateDashoard();
+          updateDataTable();
         });
     var to = $("#to")
         .datepicker({
@@ -202,26 +209,12 @@ $( document ).ready(function() {
         }).on("change", function(){
           updateDashoard();
           updateDataTable();
-          console.log("updated")
         });
     $("#from").datepicker( "setDate" , miniDate );
     $("#to").datepicker( "setDate" , maxiDate );
 
   }//setFilters
 
-
-  // //from date on change 
-  // $('#from').datepicker().on('change', function(e){
-  //   console.log("date changed")
-  //   updateDashoard();
-  //   updateDataTable();
-  // });
-
-  // //to date on change 
-  // $('#to').on('changeDate', function(e){
-  //   updateDashoard();
-  //   updateDataTable();
-  // });
 
   //filter type on change
   $('.type-dropdown').on('change', function(e){
@@ -235,7 +228,15 @@ $( document ).ready(function() {
 
   //radio Trend analysis checked
   $('#trendAnalysis').change(function(d){
-    $('#trendAnalysis').is(':checked') ? console.log("c est check") : console.log('c est pas check');
+    var checked = $('#trendAnalysis').is(':checked') ;
+    if (checked) {
+      $('#mainChart').hide();
+      drawTrendChart();
+      $('#trendChart').show();
+    } else {
+      $('#mainChart').show();
+      $('#trendChart').hide();
+    }
   })
 
   //get filters values and update chart accordingly 
@@ -251,6 +252,85 @@ $( document ).ready(function() {
     $('#datatable').dataTable().fnAddData(dataTableData); 
   }
 
+  var sort_key = function (d1, d2) {
+    var a = d1.split('-')[1];
+    var b = d2.split('-')[1];
+    if (a > b) return 1;
+    if (a < b) return -1;
+    return 0;
+  }
+
+  function drawTrendChart (argument) {
+    for (k in dataForTrends){
+      var d = moment(dataForTrends[k].date, ['DD-MM-YYYY','MM/DD/YYYY']);
+      var date = (d.month()+1) + '-' + d.year();
+      dataForTrends[k].date_trend = date;
+    }
+    var data = d3.nest()
+        .key(function(d){ return d['category']; })
+        .key(function(d){ return d['date_trend']; })
+        .rollup(function(v){ return d3.sum(v, function(d){ return d['n']; }); })
+        .entries(dataForTrends);
+
+    var xDates = ['x'],
+        yValues = [],
+        columns = [];
+    data.forEach( function(element, index) {
+      // statements
+      element.values.forEach( function(element, index) {
+        // statements
+        xDates.includes(element.key) ? '' : xDates.push(element.key);
+      });
+    });
+    xDates.sort(sort_key) ;
+    columns.push(xDates);
+    data.forEach( function(element, index) {
+      // statements
+      var arr = [];
+      arr[0] = element.key;
+      for (var i = 1; i < xDates.length; i++) {
+        val = 0 ;
+        for (var j = 0; i < element.values.length; j++) {
+          if(element.values[j].key===xDates[i]) {
+            val = element.values[j].value ;
+            break;
+          }
+        }
+        arr.push(val);
+      }
+      columns.push(arr);
+    });
+
+    trendChart = c3.generate({
+      bindto: '#trendChart',
+      size: { height: 250 },
+      padding: { left: 20 },
+      color: {
+        primeColor
+      },
+      data: {
+          x: 'x',
+          columns: columns
+      },
+      axis: {
+          x: {
+              type: 'category',
+              localtime: false,
+              tick: {
+                  // culling: { max: 4 },
+                  // format: '%b %Y',
+                  outer: false
+              }
+          },
+          y: {
+              tick: {
+                  count: 5,
+              },
+          }
+      }
+    });
+  } //drawTrendChart
+
   function drawTable (argument) {
     $('#datatable').DataTable({
       data : dataTableData,
@@ -262,142 +342,106 @@ $( document ).ready(function() {
   function drawCharts (argument) {
     var data = getCommunityFeedbackData(); // returns [x, y, z]
 
-    if (! switchTrend) {
-      if (multiBarCharts) {
-        //multiBarCharts
-        mainChart = c3.generate({
-            bindto: '#mainChart',
-            padding: { left: 250
-            },
-            size: { height: 300 },
-            color: {
-              primeColor
-            },
-            data: {
-                x: 'x',
-                columns: data[0],
-                type: 'bar',
-                group: data[1],
-            },
-            axis: {
-                rotated: true,
-                x: {
-                    type: 'category',
-                    tick: {
-                        multiline: false,
-                        centered: true,
-                        outer: false
-                    }
-                },
-                y: {
-                  tick: {
-                    centered: false,
-                    outer: false,
-                    count: 5
-                  }
-                }
-            },
-            legend: { hide: 'x' },
-            tooltip: {
-              format: {
-                value: percentageFormat
-              }
-            }
-        });
-      } else {
-        // one bar chart
-        mainChart = c3.generate({
-            bindto: '#mainChart',
-            padding: { left: 250
-            },
-            size: { height: 300 },
-            color: {
-              primeColor
-            },
-            data: {
-                x: 'x',
-                columns: [data[0], data[1]],
-                type: 'bar',
-            },
-            axis: {
-                rotated: true,
-                x: {
-                    type: 'category',
-                    tick: {
-                        multiline: false,
-                        centered: true,
-                        outer: false
-                    }
-                },
-                y: {
-                    centered: false,
-                    outer: false,
-                    count: 5
-                }
-            },
-            legend: { hide: 'x' },
-            tooltip: {
-                contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
-                    var $$ = this, config = $$.config,
-                        titleFormat = config.tooltip_format_title || defaultTitleFormat,
-                        nameFormat = config.tooltip_format_name || function (name) { return name; },
-                        valueFormat = config.tooltip_format_value || defaultValueFormat,
-                        text, i, title, value, name, bgcolor;
-                    for (i = 0; i < d.length; i++) {
-                        if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
-
-                        if (! text) {
-                            title = titleFormat ? titleFormat(d[i].x) : d[i].x;
-                            text = "<table class='" + $$.CLASS.tooltip + "'>" + (title || title === 0 ? "<tr><th colspan='2'>" + title + "</th></tr>" : "");
-                        }
-
-                        name = nameFormat(d[i].name);
-                        value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
-                        bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
-
-                        text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
-                        // text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
-                        // text += "<td class='value'>" + value + "</td>";
-                        // text += "</tr>"; 
-                    }
-                    var message = categoryDefinition[title].en;
-                    text += "<tr><td>" + message + "</td></tr>";
-                    return text + "</table>";
-                }
-            }
-        });
-      }
-    } else {
-      //trend
+    if (multiBarCharts) {
+      //multiBarCharts
       mainChart = c3.generate({
           bindto: '#mainChart',
-          size: { height: 250 },
-          padding: { left: 20 },
+          padding: { left: 250
+          },
+          size: { height: 300 },
           color: {
             primeColor
           },
           data: {
               x: 'x',
-              columns: [
-                ['x', '2013-01-01', '2013-01-02', '2013-01-03', '2013-01-04', '2013-01-05', '2013-01-06'],
-                ['data1', 30, 200, 100, 400, 150, 250]
-              ]
+              columns: data[0],
+              type: 'bar',
+              group: data[1],
           },
           axis: {
+              rotated: true,
               x: {
-                  type: 'timeseries',
-                  localtime: false,
+                  type: 'category',
                   tick: {
-                      culling: { max: 4 },
-                      format: '%b %Y',
+                      multiline: false,
+                      centered: true,
                       outer: false
                   }
               },
               y: {
+                tick: {
+                  centered: false,
+                  outer: false,
+                  count: 5
+                }
+              }
+          },
+          legend: { hide: 'x' },
+          tooltip: {
+            format: {
+              value: percentageFormat
+            }
+          }
+      });
+    } else {
+      // one bar chart
+      mainChart = c3.generate({
+          bindto: '#mainChart',
+          padding: { left: 250
+          },
+          size: { height: 300 },
+          color: {
+            primeColor
+          },
+          data: {
+              x: 'x',
+              columns: [data[0], data[1]],
+              type: 'bar',
+          },
+          axis: {
+              rotated: true,
+              x: {
+                  type: 'category',
                   tick: {
-                      count: 5,
-                  },
-                  show : false
+                      multiline: false,
+                      centered: true,
+                      outer: false
+                  }
+              },
+              y: {
+                  centered: false,
+                  outer: false,
+                  count: 5
+              }
+          },
+          legend: { hide: 'x' },
+          tooltip: {
+              contents: function (d, defaultTitleFormat, defaultValueFormat, color) {
+                  var $$ = this, config = $$.config,
+                      titleFormat = config.tooltip_format_title || defaultTitleFormat,
+                      nameFormat = config.tooltip_format_name || function (name) { return name; },
+                      valueFormat = config.tooltip_format_value || defaultValueFormat,
+                      text, i, title, value, name, bgcolor;
+                  for (i = 0; i < d.length; i++) {
+                      if (! (d[i] && (d[i].value || d[i].value === 0))) { continue; }
+
+                      if (! text) {
+                          title = titleFormat ? titleFormat(d[i].x) : d[i].x;
+                          text = "<table class='" + $$.CLASS.tooltip + "'>" + (title || title === 0 ? "<tr><th colspan='2'>" + title + "</th></tr>" : "");
+                      }
+
+                      name = nameFormat(d[i].name);
+                      value = valueFormat(d[i].value, d[i].ratio, d[i].id, d[i].index);
+                      bgcolor = $$.levelColor ? $$.levelColor(d[i].value) : color(d[i].id);
+
+                      text += "<tr class='" + $$.CLASS.tooltipName + "-" + d[i].id + "'>";
+                      // text += "<td class='name'><span style='background-color:" + bgcolor + "'></span>" + name + "</td>";
+                      // text += "<td class='value'>" + value + "</td>";
+                      // text += "</tr>"; 
+                  }
+                  var message = categoryDefinition[title].en;
+                  text += "<tr><td>" + message + "</td></tr>";
+                  return text + "</table>";
               }
           }
       });
@@ -462,6 +506,8 @@ $( document ).ready(function() {
     data = data.filter(filterByCategory);
 
     data = data.filter(filterByHealthZone);
+
+    dataForTrends = data;
 
     multiBarCharts = selectionHZ.length > 1 ? true : false;
     //set datatable data 
@@ -591,6 +637,11 @@ $( document ).ready(function() {
       data[3].forEach( function(element, index) {
         categoryDefinition[element['category']] = {'en': element['category_definition'], 'fr': element['category_definition_fr']};
       });
+      // communityData.forEach( function(element, index) {
+      //   // statements
+      //   var d = moment(element['date'], dataFormat);
+      //   element['date'] = d ;
+      // });
       setFilters();
       setKeyFigures();
       drawCharts();

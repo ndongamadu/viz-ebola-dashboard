@@ -1,8 +1,6 @@
-- choose language
-- trend analysis
-Erika :
-- multiselect dropdown Category
-- number of categories slider 
-- chart's css and color
-
-the slider depends on # category selected
+- Check at sort_key function 
+- Top 5 cat at "selected health_zones"
+- c3 charts review tooltips
+- the listed elements in category dropwdown depends on the selected element in Type dropdown, great if you can the way i am doing it, othewise that;s fine it is working
+- implement Raw count check
+- enhance Trend check function (when checked, filtering other filters not working)
