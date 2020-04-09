@@ -244,10 +244,9 @@ $( document ).ready(function() {
         .rollup(function(v){ return d3.sum(v, function(d){ return d['n']; }); })
         .entries(dataForTrends);
 
-    var xDates = ['x'],
+    var xDates = [],
         yValues = [],
         columns = [];
-    console.log(data)
     data.forEach( function(element, index) {
       // statements
       element.values.forEach( function(element, index) {
@@ -270,11 +269,10 @@ $( document ).ready(function() {
         }
         arr.push(val);
       }
-      yValues.push(arr);
+      columns.push(arr);
     });
-    console.log(yva)
-    columns.push(xDates);
-    columns.push(yValues);
+    xDates.unshift('x');
+    columns.unshift(xDates);
 
     trendChart = c3.generate({
       bindto: '#trendChart',
@@ -301,7 +299,6 @@ $( document ).ready(function() {
               tick: {
                   count: 5,
               },
-              show : false
           }
       }
     });

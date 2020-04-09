@@ -272,7 +272,7 @@ $( document ).ready(function() {
         .rollup(function(v){ return d3.sum(v, function(d){ return d['n']; }); })
         .entries(dataForTrends);
 
-    var xDates = ['x'],
+    var xDates = [],
         yValues = [],
         columns = [];
     data.forEach( function(element, index) {
@@ -283,12 +283,11 @@ $( document ).ready(function() {
       });
     });
     xDates.sort(sort_key) ;
-    columns.push(xDates);
     data.forEach( function(element, index) {
       // statements
       var arr = [];
       arr[0] = element.key;
-      for (var i = 1; i < xDates.length; i++) {
+      for (var i = 0; i < xDates.length; i++) {
         val = 0 ;
         for (var j = 0; i < element.values.length; j++) {
           if(element.values[j].key===xDates[i]) {
@@ -300,6 +299,8 @@ $( document ).ready(function() {
       }
       columns.push(arr);
     });
+    xDates.unshift('x');
+    columns.unshift(xDates);
 
     trendChart = c3.generate({
       bindto: '#trendChart',
@@ -317,7 +318,7 @@ $( document ).ready(function() {
               type: 'category',
               localtime: false,
               tick: {
-                  // culling: { max: 4 },
+                  culling: { max: 4 },
                   // format: '%b %Y',
                   outer: false
               }
