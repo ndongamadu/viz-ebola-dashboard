@@ -121,16 +121,18 @@ $( document ).ready(function() {
     $("#categorySlider").slider({
       min: 1,
       max: categoriesList.length,
-      value:5,
+      value: 5,
+      animate: 'fast',
       create: function() {
         handle.text($(this).slider("value"));
       },
       slide: function(event, ui) {
         //$( "#amount" ).val( "$" + ui.value );
         handle.text(ui.value);
+      },
+      stop: function() {
         updateDashoard();
         updateDataTable();
-        
       }
     });
     $('.slider-range').find('.max').text(categoriesList.length);
@@ -224,18 +226,19 @@ $( document ).ready(function() {
     $('#datatable').dataTable().fnAddData(dataTableData); 
   }
 
-  var sort_key = function (d1, d2) {
-    var a = d1.split('-')[1];
-    var b = d2.split('-')[1];
-    if (a > b) return 1;
-    if (a < b) return -1;
+  var sort_key = function (a, b) {
+    var d1 = new Date(a);
+    var d2 = new Date(b);
+    if (d1.getTime() > d2.getTime()) return 1;
+    if (d1.getTime() < d2.getTime()) return -1;
     return 0;
   }
 
   function drawTrendChart (argument) {
     for (k in dataForTrends){
       var d = moment(dataForTrends[k].date, ['DD-MM-YYYY','MM/DD/YYYY']);
-      var date = (d.month()+1) + '-' + d.year();
+      //var date = (d.month()+1) + '-' + d.year();
+      var date = new Date(d.year(), d.month(), d.date());
       dataForTrends[k].date_trend = date;
     }
     var data = d3.nest()
@@ -254,14 +257,16 @@ $( document ).ready(function() {
         xDates.includes(element.key) ? '' : xDates.push(element.key);
       });
     });
-    xDates.sort(sort_key) ;
+
+    xDates.sort(sort_key);
+
     data.forEach( function(element, index) {
       // statements
       var arr = [];
       arr[0] = element.key;
       for (var i = 0; i < xDates.length; i++) {
-        val = 0 ;
-        for (var j = 0; i < element.values.length; j++) {
+        var val = 0;
+        for (var j = 0; j < element.values.length; j++) {
           if(element.values[j].key===xDates[i]) {
             val = element.values[j].value ;
             break;
@@ -271,13 +276,20 @@ $( document ).ready(function() {
       }
       columns.push(arr);
     });
-    xDates.unshift('x');
-    columns.unshift(xDates);
 
+    //format dates for timeseries chart
+    var timedata = ['x'];
+    xDates.forEach(function(date) {
+      var d = new Date(date);
+      timedata.push((d.getMonth()+1) + '-' + d.getDate() + '-' + d.getFullYear());
+    })
+    //xDates.unshift('x');
+    columns.unshift(timedata);
+console.log(columns)
     trendChart = c3.generate({
       bindto: '#trendChart',
-      size: { height: 250 },
-      padding: { left: 20 },
+      size: { height: 305 },
+      padding: { right: 35, bottom: 10 },
       color: {
         primeColor
       },
@@ -285,21 +297,35 @@ $( document ).ready(function() {
           x: 'x',
           columns: columns
       },
+      point: {
+          show: false
+      },
       axis: {
           x: {
               type: 'category',
               localtime: false,
               tick: {
+                  centered: true,
                   culling: { max: 4 },
-                  // format: '%b %Y',
+                  //format: '%m-%d-%y',
                   outer: false
               }
           },
           y: {
               tick: {
-                  count: 5,
+                format: function(d) { return d + '%'; }
               },
+              min: 0,
+              padding: { bottom: 0 }
           }
+      },
+      grid: {
+          y: {
+              show: true
+          }
+      },
+      tooltip: {
+          grouped: false
       }
     });
   } //drawTrendChart
@@ -315,13 +341,14 @@ $( document ).ready(function() {
   function drawCharts (argument) {
     var data = getCommunityFeedbackData(); // returns [x, y, z]
 
+    console.log(data)
+
     if (multiBarCharts) {
       //multiBarCharts
       mainChart = c3.generate({
           bindto: '#mainChart',
-          padding: { left: 250
-          },
-          size: { height: 300 },
+          padding: { left: 250, right: 30 },
+          size: { height: 305 },
           color: {
             primeColor
           },
@@ -340,13 +367,11 @@ $( document ).ready(function() {
                       centered: true,
                       outer: false
                   }
-              },
+              }
+          },
+          grid: {
               y: {
-                tick: {
-                  centered: false,
-                  outer: false,
-                  count: 5
-                }
+                  show: true
               }
           },
           legend: { hide: 'x' },
@@ -360,9 +385,8 @@ $( document ).ready(function() {
       // one bar chart
       mainChart = c3.generate({
           bindto: '#mainChart',
-          padding: { left: 250
-          },
-          size: { height: 300 },
+          padding: { left: 250, right: 30 },
+          size: { height: 305 },
           color: {
             primeColor
           },
@@ -377,14 +401,13 @@ $( document ).ready(function() {
                   type: 'category',
                   tick: {
                       multiline: false,
-                      centered: true,
-                      outer: false
+                      centered: true
                   }
-              },
+              }
+          },
+          grid: {
               y: {
-                  centered: false,
-                  outer: false,
-                  count: 5
+                  show: true
               }
           },
           legend: { hide: 'x' },
@@ -621,6 +644,7 @@ $( document ).ready(function() {
       drawTable();
       generateMap();
       
+      $(document).tooltip();
     });
   } //getData
 

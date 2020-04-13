@@ -279,6 +279,7 @@ select {
     font-size: 10px;
     line-height: 19px;
     height: 22px;
+    margin-left: -11px;
     text-align: center;
     top: -7px;
     width: 22px; }
@@ -289,6 +290,49 @@ select {
   padding-top: 10px; }
   .slider-range .max {
     margin-left: auto; }
+
+#datatable {
+  margin-top: 20px; }
+  #datatable thead tr {
+    text-align: left; }
+    #datatable thead tr th:last-child {
+      min-width: 112px; }
+
+.date-range-container {
+  align-items: center;
+  display: flex;
+  margin-top: 5px; }
+  .date-range-container label {
+    padding: 0 5px; }
+  .date-range-container input {
+    border: 0;
+    border-radius: 4px;
+    padding: 0 10px; }
+
+#downloadBtn {
+  line-height: 24px; }
+
+.ui-tooltip {
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2) !important;
+  font-size: 14px !important; }
+
+.hasDatepicker {
+  height: 34px;
+  width: 50%; }
+
+.ms-parent {
+  margin-top: 7px; }
+
+.ms-choice {
+  height: 34px !important;
+  line-height: 34px !important; }
+
+.c3-tooltip-container {
+  max-width: 80%; }
+
+.c3-axis-y .domain,
+.c3-axis-y .tick line {
+  display: none; }
 
 @media only screen and (max-width: 767px) {
   .logos .grid-container > div {

@@ -90,9 +90,9 @@
 
           <div>
             Date range
-            <div>
+            <div class="date-range-container">
               <input type="text" id="from" name="from">
-              <label for="to"> - </label>
+              <label for="to"> – </label>
               <input type="text" id="to" name="to">
             </div>
 
@@ -109,7 +109,7 @@
             <select class='presentation-dropdown'>
               <option value=''>IFRC feedback for comments related to the effect of money on the Ebola outbreak and the response 09 2019-09-13.pdf</option>
             </select>
-            <a role='button' class='btn align-right trans' href='#'><i class='fas fa-download'></i> Download</a>
+            <a role='button' id='downloadBtn' class='btn align-right trans' href='#'><i class='fas fa-download'></i> Download</a>
           </div>
         </div>
         <div class='col-9'>
@@ -146,14 +146,14 @@
               <div id="trendChart">
               </div>
               <div class='container-footer'>
-                <a href='#'><i class='fas fa-question-circle'></i></a>
+                <a href='#' title='Please click on a category to see in the qualitative data below the most frequent feedback by that category.'><i class='fas fa-question-circle'></i></a>
               </div>
             </div>
             <div class='container map col-4'>
               <div class='inner' id="map"></div>
 
               <div class='container-footer'>
-                <a href='#'><i class='fas fa-question-circle'></i></a>
+                <a href='#' title='Health zones where the data were collected. It turns red when you click on a marker, double click to unselect that health zone.'><i class='fas fa-question-circle'></i></a>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@
               </div>
 
               <div class='container-footer'>
-                <a href='#'><i class='fas fa-question-circle'></i></a>
+                <a href='#' title='Most frequent rumours, beliefs, observations, questions and suggestions by category based on CDC interpretation of data.'><i class='fas fa-question-circle'></i></a>
               </div>
             </div>
           </div>
