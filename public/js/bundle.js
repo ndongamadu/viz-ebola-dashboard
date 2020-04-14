@@ -118,19 +118,20 @@ $( document ).ready(function() {
         minimumCountSelected : 1,
         onClose: function(){
           updateDashoard();
+          updateDataTable();
         }
       });
     } else {
       // refresh dropdown options
-      $("#categoryDropdown").multipleSelect('destroy')
+      $("#categoryDropdown").multipleSelect("destroy")
       $("#categoryDropdown").multipleSelect({
         data: cat,
         onClose: function(){
-          return updateDashoard();
-          // updateDataTable();
+          updateDashoard();
+          updateDataTable();
         }
       });
-      $("#categoryDropdown").multipleSelect('refresh');
+      $("#categoryDropdown").multipleSelect("refresh");
     }
 
     $("#categoryDropdown").multipleSelect("checkAll");
