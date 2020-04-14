@@ -4,3 +4,7 @@
 - the listed elements in category dropwdown depends on the selected element in Type dropdown, great if you can the way i am doing it, othewise that;s fine it is working
 - implement Raw count check
 - enhance Trend check function (when checked, filtering other filters not working)
+
+
+== refractoring 
+create a global filter function and filteres communityfeedback data and all others functions uses the same global data

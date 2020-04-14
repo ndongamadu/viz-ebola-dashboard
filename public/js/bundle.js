@@ -60,27 +60,28 @@ $( document ).ready(function() {
 // -- all global vars //
 
   function setKeyFigures (argument) {
+    var data = burdenData;
+
     //get from-to date
     fromDate = $("#from").datepicker('getDate');
     toDate = $("#to").datepicker('getDate');
 
-    //get selected healthzone
-    var selectionHZ = $('.health-zone-dropdown option:selected').text();
-    var data = burdenData;
-    selectionHZ = 'Beni';
+    data = data.filter(function(d){
+      var dt = new Date(d['publication_date']) ;
+      return dt.getTime() >= fromDate.getTime()  &&
+       dt.getTime() <= toDate.getTime() ;
+    });
 
-    //filter data through date range
-    
-    data = data.filter(function(d){ return d['health_zone'] == selectionHZ; });
+    selectionHZ===undefined ? selectionHZ = ['Beni']: selectionHZ = $('.health-zone-dropdown').val();
+    data = data.filter(filterByHealthZone);
     var dataByHZ = d3.nest()
-        .key(function(d){ return d['health_zone']; })
+        .key(function(d){ return d['country']; })
         .rollup(function(v){
           return {
             cases: d3.sum(v, function(d){ return d['confirmed_cases_change']; }),
             deaths: d3.sum(v, function(d){ return d['confirmed_deaths_change']; })
           };})
         .entries(data);
-
     //check what feedback data refers to
     var totalFeedback  = 4556 ;
 
@@ -189,14 +190,16 @@ $( document ).ready(function() {
     });
     $("#healthZoneDropdown").val(["Beni"]);
     $("#healthZoneDropdown").multipleSelect("refresh");
+    var mDate = d3.min(communityData,function(d){return d['date'];});
+
 
     var miniDate = new Date(d3.min(communityData,function(d){return d['date'];}));
     var maxiDate = new Date(d3.max(communityData,function(d){return d['date'];}));
-    
+
     var dateFormat = "yy-mm-dd";
     var from = $("#from")
         .datepicker({
-          dateFormat : dateFormat,
+          // dateFormat : dateFormat,
           minDate : miniDate,
           maxDate : maxiDate
         }).on("change", function(){
@@ -205,13 +208,14 @@ $( document ).ready(function() {
         });
     var to = $("#to")
         .datepicker({
-          dateFormat : dateFormat,
+          // dateFormat : dateFormat,
           minDate : miniDate,
           maxDate : maxiDate
         }).on("change", function(){
           updateDashoard();
           updateDataTable();
         });
+
     $("#from").datepicker( "setDate" , miniDate );
     $("#to").datepicker( "setDate" , maxiDate );
 
@@ -224,8 +228,7 @@ $( document ).ready(function() {
     setCategoryFilter(select);
     updateDashoard();
     updateDataTable();
-    // slider max value should be updated accordingly
-    // $("#categorySlider").slider("option", "max", 8);
+
   });
 
   //radio Trend analysis checked
@@ -245,8 +248,9 @@ $( document ).ready(function() {
   function updateDashoard () {
     setKeyFigures();
     mainChart===undefined ? '' : mainChart=null
-    drawCharts();
+    drawCharts(); // calls getCommunityFeedbackData()
     updateDataTable();
+    drawTrendChart();
   }//updateDashoard
 
   function updateDataTable (argument) {
@@ -262,10 +266,28 @@ $( document ).ready(function() {
     return 0;
   }
 
-  function drawTrendChart (argument) {
+  function filterCategory(item) {
+    var included = false;
+    for (var i=0; i<showedCategories.length; i++) {
+      if (item['category'] == showedCategories[i]) {
+        included = true;
+        break;
+      }
+    }
+    return included;
+  }
+  var showedCategories = [];
+
+  function getTrendData () {
+    var numCategory = $("#categorySlider").slider("value");
+    for (var i = 0; i < numCategory; i++) {
+      showedCategories.push(selectionCategory[i]);
+    }
+    dataForTrends = dataForTrends.filter(filterCategory);
+
     for (k in dataForTrends){
-      var d = moment(dataForTrends[k].date, ['DD-MM-YYYY','MM/DD/YYYY']);
-      //var date = (d.month()+1) + '-' + d.year();
+      var d = moment(dataForTrends[k].date, ['DD-MM-YYYY','MM/DD/YYYY']).startOf('isoWeek');
+      // var date = d.startOf('isoWeek');
       var date = new Date(d.year(), d.month(), d.date());
       dataForTrends[k].date_trend = date;
     }
@@ -274,6 +296,8 @@ $( document ).ready(function() {
         .key(function(d){ return d['date_trend']; })
         .rollup(function(v){ return d3.sum(v, function(d){ return d['n']; }); })
         .entries(dataForTrends);
+
+    // var total = d3.sum(data, function(d){ return d['n']; });
 
     var xDates = [],
         yValues = [],
@@ -285,7 +309,6 @@ $( document ).ready(function() {
         xDates.includes(element.key) ? '' : xDates.push(element.key);
       });
     });
-
     xDates.sort(sort_key);
 
     data.forEach( function(element, index) {
@@ -313,7 +336,15 @@ $( document ).ready(function() {
     })
     //xDates.unshift('x');
     columns.unshift(timedata);
-console.log(columns)
+    return columns;
+  } //getTrendData
+
+  function drawTrendChart (argument) {
+
+    var columns = getTrendData();
+
+    trendChart===undefined ? '' : trendChart=null;
+
     trendChart = c3.generate({
       bindto: '#trendChart',
       size: { height: 305 },
@@ -335,13 +366,13 @@ console.log(columns)
               tick: {
                   centered: true,
                   culling: { max: 4 },
-                  //format: '%m-%d-%y',
+                  // format: '%m-%d-%y',
                   outer: false
               }
           },
           y: {
               tick: {
-                format: function(d) { return d + '%'; }
+                // format: function(d) { return d + '%'; }
               },
               min: 0,
               padding: { bottom: 0 }
@@ -356,6 +387,7 @@ console.log(columns)
           grouped: false
       }
     });
+
   } //drawTrendChart
 
   function drawTable (argument) {
@@ -368,8 +400,6 @@ console.log(columns)
 
   function drawCharts (argument) {
     var data = getCommunityFeedbackData(); // returns [x, y, z]
-
-    console.log(data)
 
     if (multiBarCharts) {
       //multiBarCharts
@@ -500,7 +530,6 @@ console.log(columns)
     }
     return included;
   }
-
   var selectionCategory;
   var selectionHZ;
   function getCommunityFeedbackData () {
@@ -524,7 +553,8 @@ console.log(columns)
 
     data = data.filter(function(d){
       var dt = new Date(d['date']) ;
-      return fromDate <= dt <= toDate ;
+      return dt.getTime() >= fromDate.getTime()  &&
+       dt.getTime() <= toDate.getTime() ;
     });
 
     data = data.filter(filterByCategory);
@@ -554,7 +584,6 @@ console.log(columns)
     var numCategory    = $("#categorySlider").slider("value");
     var xCategoryArr   = ['x'],
         yCategoryArr   = [];
-
     if (! multiBarCharts) {
       total = d3.sum(dataByMetric[0].values, function(d){ return d['value']; });
       dataByMetric[0].values.forEach( function(element, index) {
@@ -661,11 +690,12 @@ console.log(columns)
       data[3].forEach( function(element, index) {
         categoryDefinition[element['category']] = {'en': element['category_definition'], 'fr': element['category_definition_fr']};
       });
-      // communityData.forEach( function(element, index) {
-      //   // statements
-      //   var d = moment(element['date'], dataFormat);
-      //   element['date'] = d ;
-      // });
+      communityData.forEach( function(element, index) {
+        // statements
+        var d = moment(element['date'], ['DD-MM-YYYY','MM/DD/YYYY']);
+        var date = new Date(d.year(), d.month(), d.date())
+        element['date'] = date ;
+      });
       setFilters();
       setKeyFigures();
       drawCharts();
