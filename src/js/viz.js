@@ -108,6 +108,16 @@ $( document ).ready(function() {
     $("#categoryDropdown").multipleSelect("checkAll");
   }//updateCategoryFilter
 
+  function chartTitle (argument) {
+    // var selection = $('.health-zone-dropdown').val();
+        selectionHZ===undefined ? selectionHZ = ['Beni']: selectionHZ = $('.health-zone-dropdown').val();
+    var html = "Top 5 categories at";
+    for (var i = 0; i < selectionHZ.length; i++) {
+      i===0? html +=" " : html += ", ";
+      html += selectionHZ[i];
+    }
+    $('#showedHealthZones').text(html); 
+  }//
 
   function setFilters (argument) {
     setCategoryFilter();
@@ -157,6 +167,7 @@ $( document ).ready(function() {
       minimumCountSelected: 1,
       onClose: function(){
         updateDashoard();
+        chartTitle();
         updateDataTable();
       }
     });
